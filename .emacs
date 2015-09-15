@@ -240,9 +240,6 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(nodejs-repl-command "nodejs")
- '(send-mail-function (quote smtpmail-send-it))
- '(smtpmail-smtp-server "smtp.inaccess.com")
- '(smtpmail-smtp-service 25)
  '(text-mode-hook (quote (turn-on-auto-fill text-mode-hook-identify)))
  '(tool-bar-mode nil))
 (custom-set-faces
