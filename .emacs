@@ -110,7 +110,7 @@
 (add-to-list 'default-frame-alist '(foreground-color . "navajowhite"))
 (add-to-list 'default-frame-alist '(background-color . "black"))
 
-(add-to-list 'auto-mode-alist '("\\.erl\\'" . erlang-mode))
+;; (add-to-list 'auto-mode-alist '("\\.erl\\'" . erlang-mode))
 
 (set-face-attribute 'default nil :height 90)
 
