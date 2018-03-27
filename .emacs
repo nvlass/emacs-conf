@@ -1,12 +1,23 @@
-(tool-bar-mode -1)
+(when (functionp 'tool-bar-mode) (tool-bar-mode -1))
+(when (functionp 'menu-bar-mode) (menu-bar-mode -1))
+(when (functionp 'scroll-bar-mode) (scroll-bar-mode -1))
 
-(load (expand-file-name "~/bin/quicklisp/slime-helper.el"))
-;; Replace "sbcl" with the path to your implementation
-(setq inferior-lisp-program "sbcl")
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/elisp"))
+
+(setq ispell-program-name "aspell")
+
+(setq exec-path (append exec-path '("~/bin")))
+
+;; temp
+;; (setq browse-url-browser-function 'browse-url-generic
+;;       browse-url-generic-program "/opt/google/chrome/chrome")
+
+(setq inferior-lisp-program "/usr/local/bin/sbcl")
+(setq slime-contribs '(slime-fancy))
 
 ;; set transparency
-(set-frame-parameter (selected-frame) 'alpha '(85 85))
-(add-to-list 'default-frame-alist '(alpha 85 85))
+(set-frame-parameter (selected-frame) 'alpha '(95 95))
+(add-to-list 'default-frame-alist '(alpha 95 95))
 
 (defun clip-foo (x)
   (if (> x 100)
@@ -14,6 +25,10 @@
     (if (< x 5)
 	5
       x)))
+
+(defun colorize-region ()
+  (interactive)
+  (ansi-color-apply-on-region (region-beginning) (region-end)))
 
 (defun inc-transp ()
   (interactive)
@@ -37,56 +52,72 @@
 (global-set-key (kbd "C-x <S-prior>") 'inc-transp)
 (global-set-key (kbd "C-x <S-next>") 'dec-transp)
 
-
 (set 'scheme-program-name "guile")
-;(set 'scheme-program-name "kawa")
 
-(add-to-list 'load-path "~/bin/elisp/")
-
-(setq browse-url-browser-function 'browse-url-firefox)
-;; (setq browse-url-browser-function 'browse-url-elinks)
-
-;; (setq synonyms-file "/home/nvlass/bin/mthesaur.txt")
-;; (setq synonyms-cache-file "/home/nvlass/bin/mthesaur.txt.cache")
-;; (require 'synonyms)
+(setq browse-url-browser-function 'browse-url-safari)
 
 (require 'package)
 (add-to-list 'package-archives 
-    '("marmalade" .
-      "http://marmalade-repo.org/packages/"))
+	     '("marmalade" .
+	       "http://marmalade-repo.org/packages/"))
 (add-to-list 'package-archives
-  '("melpa" . "http://melpa.milkbox.net/packages/") t)
+	     '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives
+	     '("melpa-stable" . "http://stable.melpa.org/packages/"))
 (package-initialize)
 
-
-;; wordnik thesaurus stuff
-;; (require 'json)
-;; (defvar wordnik-token nil)
-
-(require 'itail)
-
-
-(require 'java-mode-indent-annotations)
-
+;; Java
 (add-hook 'java-mode-hook 
     (lambda ()
         (setq c-basic-offset 4)
         (setq indent-tabs-mode nil)
         (setq c-continued-statement-offset 4)
         (c-set-offset 'arglist-cont-nonempty 4)
-        (java-mode-indent-annotations-setup)
         (linum-mode)
     ))
 
+;; Clojure
 (add-hook 'clojure-mode-hook
-    'linum-mode
-    'rainbow-delimiters-mode)
+	  (lambda ()
+	    (linum-mode)
+	    (rainbow-delimiters-mode)
+	    (auto-complete-mode)))
 
+
+(require 'clojure-mode)
+;; compojure indenting stuff
+(define-clojure-indent
+  (defroutes 'defun)
+  (GET 2)
+  (POST 2)
+  (PUT 2)
+  (DELETE 2)
+  (HEAD 2)
+  (ANY 2)
+  (context 2))
+
+;; Python
 (add-hook 'python-mode-hook
     (lambda ()
         (setq c-basic-offset 4)
         (setq indent-tabs-mode nil)))
 
+
+;; Go 
+(require 'go-autocomplete)
+(require 'auto-complete-config)
+(ac-config-default)
+
+(setq gofmt-command "goimports")
+
+(defun go-mode-hook-n ()
+  (add-hook 'before-save-hook 'gofmt-before-save)
+  (auto-complete-mode 1)
+  )
+
+(add-hook 'go-mode-hook 'go-mode-hook-n)
+
+;; Frame / buffer navigation
 (defun right-win-or-frame ()
   (interactive)
   (if (windowp (window-in-direction 'right))
@@ -105,18 +136,29 @@
 (global-set-key (kbd "C-x <right>") 'right-win-or-frame)
 
 
-;; (require 'erlang)
+;; Frame
+;;(add-to-list 'default-frame-alist '(foreground-color . "navajowhite"))
+;;(add-to-list 'default-frame-alist '(background-color . "black"))
 
-(add-to-list 'default-frame-alist '(foreground-color . "navajowhite"))
-(add-to-list 'default-frame-alist '(background-color . "black"))
 
-;; (add-to-list 'auto-mode-alist '("\\.erl\\'" . erlang-mode))
-
-(set-face-attribute 'default nil :height 90)
-
+;; JSON
 (require 'json-mode)
 
+(add-hook
+ 'json-mode-hook
+ (lambda ()
+   (hs-minor-mode)
+   (global-set-key (kbd "C-c h") 'hs-hide-block)
+   (global-set-key (kbd "C-c s") 'hs-show-block)
+   ))
+
+
 (winner-mode)
+
+(add-hook
+ 'html-mode-hook
+ (lambda ()
+   (web-mode)))
 
 ;; use pandoc to html preview latex 
 ;; files
@@ -133,6 +175,7 @@
       (browse-url-of-buffer obn))))
 
 
+;; Latex mode highlighting
 (add-hook 
  'latex-mode-hook
  (lambda ()
@@ -146,6 +189,7 @@
 
 
 
+;; Standard
 (defadvice show-paren-function
   (after show-matching-paren-offscreen activate)
   "If the matching paren is offscreen, show the matching line in the
@@ -168,85 +212,69 @@
 (define-key ctl-x-map "F" 'resume)
 (define-key ctl-x-map "K" 'wipe)
 
-(require 'uuid-gen)
-(global-set-key (kbd "C-c C-u") 'uuid-gen)
 
 
-(add-hook 'json-mode-hook
-    (lambda ()
-      (hs-minor-mode)
-      (global-set-key (kbd "C-c h") 'hs-hide-block)
-      (global-set-key (kbd "C-c s") 'hs-show-block)
-      ))
+;; Cross-emacs copying through pipes
+;; (defun copy-to-pipe ()
+;;   (interactive)
+;;   (when (file-exists-p "/tmp/f1")
+;;     (write-region (buffer-substring (region-beginning) (region-end))
+;; 		  nil "/tmp/f1" nil)))
 
-(when (functionp 'powerline-default-theme)
-  (powerline-default-theme))
+;; (defun paste-from-pipe ()
+;;   (interactive)
+;;   (when (file-exists-p "/tmp/f1")
+;;     (insert-file-contents "/tmp/f1")))
 
-;; swagger validate schema
-(defvar swagger-uri 
-  "https://raw.githubusercontent.com/swagger-api/swagger-spec/master/schemas/v2.0/schema.json")
+;; (when (file-exists-p "/tmp/f1")
+;;   (global-set-key (kbd "C-c C-y") 'copy-to-pipe)
+;;   (global-set-key (kbd "C-c M-y") 'paste-from-pipe))
 
-(defun json-validate-buff ()
-  (interactive)
-  (let ((pbuff (current-buffer))
-	(psize (buffer-size)))
-    
-    (let* ((wg-file (make-temp-file "/tmp/wgfoo"))
-	   (sw-file (make-temp-file "/tmp/swfoo")))
-      (with-temp-file wg-file
-	(call-process "wget" 
-		      nil 
-		      (current-buffer)
-		      nil 
-		      swagger-uri 
-		      "-O" "-" "--quiet")
-	(buffer-string))
-      (with-temp-file sw-file
-	(insert-buffer-substring
-	 pbuff 1 (+ psize 1)))
-      (with-current-buffer (get-buffer-create "*swa-val*")
-	(erase-buffer)
-	(start-process "swa" "*swa-val*" "json-schema-val.sh" wg-file sw-file)))))
 
-(global-set-key (kbd "C-c v j") 'json-validate-buff)
+;; Cider specific config for direct
+;; backend connections
+(require 'backend-cider)
 
-(require 'clojure-mode)
 
-(define-clojure-indent
-  (defroutes 'defun)
-  (GET 2)
-  (POST 2)
-  (PUT 2)
-  (DELETE 2)
-  (HEAD 2)
-  (ANY 2)
-  (context 2))
-
+;; Fullscreen mode
 (when (executable-find "wmctrl")
   (defun toggle-full-screen ()
     "Toggle full screen"
     (interactive)
     (shell-command "wmctrl -r :ACTIVE: -btoggle,fullscreen")))
 
-;; (setq browse-url-browser-function 'browse-url-firefox
-;;       browse-url-new-window-flag  nil
-;;       browse-url-firefox-new-window-is-tab t)
-
 (global-set-key [f11] 'toggle-full-screen)
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(nodejs-repl-command "nodejs")
- '(text-mode-hook (quote (turn-on-auto-fill text-mode-hook-identify)))
- '(tool-bar-mode nil))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+;; Clear *SQL* buffer (copied from somewhere)
+(defun clear-sql-comint-out ()
+  (interactive)
+  ;; I am lazy, so it only works with *SQL* buffers
+  ;; (and not renamed ones)
+  (with-current-buffer (get-buffer "*SQL*")
+    (delete-region (point-min)
+		   (point-max))
+    (comint-send-input)))
+
+(global-set-key (kbd "C-c C-l C-l") 'clear-sql-comint-out)
+
+;; Set fonts when in window mode
+(when (not (eql (framep (selected-frame)) 't))
+  (let ((fnt-name "Inconsolata 12"))
+    (let ((ft (find-font (font-spec :name fnt-name))))
+      (if (fontp ft)
+	  (progn
+	    (set-frame-font (find-font (font-spec :name fnt-name)))
+	    (set-face-attribute 'default nil :height 110 :weight 'light :slant 'normal))
+	(set-face-attribute 'default nil :height 110 :slant 'normal)))))
+
+
+;; For when using JDEE
+;; (setq jdee-server-dir (expand-file-name "~/usr/jdee-bundle-1.1-full.jar"))
+
+;; Ensime and scala stuff
+;; (setq ensime-sbt-command (expand-file-name "~/usr/local/opt/sbt@0.13/bin"))
+
+
+(load-theme 'cyberpunk)
 (put 'downcase-region 'disabled nil)
 
